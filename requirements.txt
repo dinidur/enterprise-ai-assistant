@@ -1,0 +1,30 @@
+# --- Web / API ---
+fastapi
+uvicorn[standard]
+httpx
+
+# --- UI ---
+streamlit
+
+# --- Agent orchestration ---
+langgraph
+langchain
+langchain-openai
+langsmith
+
+# --- Retrieval ---
+pinecone
+rank-bm25
+
+# --- Config / validation ---
+pydantic
+pydantic-settings
+python-dotenv
+
+# --- Ops ---
+structlog
+tenacity
+
+# --- Tests ---
+pytest
+pytest-asyncio
