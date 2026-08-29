@@ -9,12 +9,14 @@ streamlit
 # --- Agent orchestration ---
 langgraph
 langchain
-langchain-openai
-langsmith
+langchain-core
+langchain-google-genai      # Gemini: free tier, no credit card
+langsmith                   # observability: free developer tier
 
 # --- Retrieval ---
-pinecone
-rank-bm25
+pinecone                    # vector DB: free starter plan
+fastembed                   # local ONNX embeddings: free, no quota, no torch
+rank-bm25                   # sparse / keyword search
 
 # --- Config / validation ---
 pydantic

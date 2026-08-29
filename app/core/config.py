@@ -28,13 +28,19 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     # --- LLM ---
-    openai_api_key: str = ""
-    llm_model: str = "gpt-4o-mini"
+    # Gemini is used because its free tier needs no credit card and allows
+    # ~1,500 requests/day, which is ample for a POC and a recorded demo.
+    google_api_key: str = ""
+    llm_model: str = "gemini-2.5-flash"
+    llm_fallback_model: str = "gemini-2.0-flash"
     llm_temperature: float = 0.0
 
     # --- Embeddings ---
-    embedding_model: str = "text-embedding-3-small"
-    embedding_dimension: int = 1536
+    # Embeddings run locally through fastembed (ONNX). Local inference means no
+    # API quota is consumed during ingestion or at query time, and no torch
+    # dependency, so the container stays small.
+    embedding_model: str = "BAAI/bge-small-en-v1.5"
+    embedding_dimension: int = 384
 
     # --- Vector database ---
     pinecone_api_key: str = ""
