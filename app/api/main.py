@@ -14,6 +14,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.api.chat import router as chat_router
 from app.core.config import settings
 from app.core.exceptions import AppError
 from app.core.logging import (
@@ -80,6 +81,9 @@ async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
         status_code=exc.status_code,
         content={"error": {"code": exc.code, "message": exc.message}},
     )
+
+
+app.include_router(chat_router)
 
 
 @app.get("/health", tags=["system"])

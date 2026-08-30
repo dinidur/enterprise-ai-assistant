@@ -31,8 +31,8 @@ class Settings(BaseSettings):
     # Gemini is used because its free tier needs no credit card and allows
     # ~1,500 requests/day, which is ample for a POC and a recorded demo.
     google_api_key: str = ""
-    llm_model: str = "gemini-2.5-flash"
-    llm_fallback_model: str = "gemini-2.0-flash"
+    llm_model: str = "gemini-3.6-flash"
+    llm_fallback_model: str = "gemini-3.5-flash-lite"
     llm_temperature: float = 0.0
 
     # --- Embeddings ---
