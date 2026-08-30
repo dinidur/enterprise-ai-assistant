@@ -38,6 +38,37 @@ log = get_logger(__name__)
 T = TypeVar("T", bound=BaseModel)
 
 
+def content_to_text(content: Any) -> str:
+    """Flatten a chat message's content into plain text.
+
+    Newer Gemini responses return content as a list of structured blocks -
+    ``[{"type": "text", "text": "...", "extras": {...}}]`` - rather than a
+    string. Calling ``str()`` on that yields the repr of the list, signature
+    blobs and all, which then leaks into the UI. Everything that reads model
+    output goes through here so the rest of the code only ever sees text.
+    """
+    if isinstance(content, str):
+        return content
+    if content is None:
+        return ""
+    if isinstance(content, list):
+        parts: list[str] = []
+        for block in content:
+            if isinstance(block, str):
+                parts.append(block)
+            elif isinstance(block, dict):
+                if block.get("type", "text") == "text" and "text" in block:
+                    parts.append(str(block["text"]))
+            else:
+                text = getattr(block, "text", None)
+                if isinstance(text, str):
+                    parts.append(text)
+        return "".join(parts)
+    if isinstance(content, dict) and "text" in content:
+        return str(content["text"])
+    return str(content)
+
+
 @lru_cache(maxsize=4)
 def get_llm(temperature: float | None = None) -> BaseChatModel:
     """Return the chat model, with a fallback model attached.
@@ -82,7 +113,7 @@ async def ainvoke(messages: list[BaseMessage], *, temperature: float | None = No
     except Exception as exc:  # noqa: BLE001 - normalised into a domain error
         log.warning("llm_call_failed", error=str(exc))
         raise LLMError(f"language model call failed: {exc}") from exc
-    return str(response.content)
+    return content_to_text(response.content)
 
 
 @retry(

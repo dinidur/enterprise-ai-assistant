@@ -234,7 +234,12 @@ if question:
                         render_activity(events, activity_container)
 
                     elif kind == "token":
-                        answer += payload.get("text", "")
+                        # Defensive: a malformed payload must not kill the
+                        # whole turn mid-stream.
+                        chunk_text = payload.get("text", "")
+                        if not isinstance(chunk_text, str):
+                            chunk_text = str(chunk_text)
+                        answer += chunk_text
                         answer_placeholder.markdown(answer + "▌")
 
                     elif kind == "citations":

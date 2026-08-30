@@ -30,6 +30,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
 from app.agents.graph import get_compiled_graph
+from app.agents.llm import content_to_text
 from app.agents.state import new_state
 from app.api.schemas import ChatRequest, UserInfo
 from app.auth.roles import USERS, Permission, User, authenticate, require_permission
@@ -109,6 +110,10 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
 
         emitted_traces = 0
         final_state: dict[str, Any] = {}
+        # A node's update carries its trace list, and a state channel with an
+        # `add` reducer can replay earlier entries. De-duplicate on the wire so
+        # the activity panel shows each step exactly once.
+        seen_traces: set[tuple] = set()
 
         try:
             async for mode, chunk in graph.astream(
@@ -120,6 +125,14 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
                             continue
                         final_state.update(update)
                         for event in update.get("trace", []) or []:
+                            key = (
+                                event.get("ts"),
+                                event.get("node"),
+                                event.get("label"),
+                            )
+                            if key in seen_traces:
+                                continue
+                            seen_traces.add(key)
                             emitted_traces += 1
                             yield _line("trace", dict(event))
                         for message in update.get("errors", []) or []:
@@ -133,7 +146,7 @@ async def chat_stream(request: ChatRequest) -> StreamingResponse:
                     # Only the response agent's tokens are the visible answer.
                     if metadata.get("langgraph_node") != "respond":
                         continue
-                    text = getattr(message_chunk, "content", "")
+                    text = content_to_text(getattr(message_chunk, "content", ""))
                     if text:
                         yield _line("token", {"text": text})
 
