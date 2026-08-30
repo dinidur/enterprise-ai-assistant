@@ -33,22 +33,28 @@ async def tools_node(state: AgentState) -> dict:
     """
     user = authenticate(state["user_id"])
 
+    from app.agents.retrieval_agent import retrieval_node
+
     try:
         require_permission(user, Permission.ANALYTICS_TOOLS)
     except AuthorizationError as exc:
+        # Denied for tools, but this role may still search. Falling back to
+        # retrieval is the graceful degradation: the caller gets the best
+        # answer their permissions allow instead of an empty response. The
+        # denial itself stays visible in the trace.
         log.warning("tool_access_denied", role=user.role.value, error=str(exc))
-        return {
-            "tool_results": [],
-            "errors": [str(exc)],
-            "trace": [trace(NODE, "Tool access denied", status="warning", detail=str(exc))],
-        }
+        result = await retrieval_node(state)
+        result["errors"] = result.get("errors", []) + [str(exc)]
+        result["trace"] = [
+            trace(NODE, "Tool access denied", status="warning", detail=str(exc)),
+            trace(NODE, "Falling back to document search", detail="the role may still search"),
+        ] + result.get("trace", [])
+        return result
 
     events = [trace(NODE, "Tool permissions granted", detail=f"role: {user.role.value}")]
 
     # Placeholder until concrete tools are registered: fall through to
     # retrieval so a tool_task still produces a grounded answer.
-    from app.agents.retrieval_agent import retrieval_node
-
     try:
         result = await asyncio.wait_for(retrieval_node(state), timeout=TOOL_TIMEOUT_SECONDS)
     except asyncio.TimeoutError as exc:

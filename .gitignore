@@ -19,3 +19,11 @@ data/.cache/
 .idea/
 .vscode/
 .DS_Store
+
+# Screen recordings and other large local media - deliverables, not source.
+*.mp4
+*.mov
+*.mkv
+*.avi
+*.webm
+recordings/
